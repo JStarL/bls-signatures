@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <pbc/pbc.h>
 #include <string.h>
+#include <openssl/sha.h>
 
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 
@@ -43,7 +44,20 @@ int main(void) {
     To implement, BLS Signature hashing
     */
 
-    element_from_hash(h, "ABCDEF", 6);
+    const char *message = "Hello World";
+
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    SHA256((unsigned char *)message, strlen(message), hash);
+
+    printf("SHA-256 hash: ");
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        printf("%02x", hash[i]);
+    }
+    printf("\n");
+
+
+    element_from_hash(h, hash, 6);
 
     element_pow_zn(sig, h, secret_key);
 
