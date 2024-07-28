@@ -66,6 +66,7 @@ int main(void) {
         initialize_data_structure(secret_key[i], pairing, "Zr");
     }
     
+    initialize_data_structure(agg_sig, pairing, "G1");
     initialize_data_structure(lhs, pairing, "GT");
     initialize_data_structure(rhs, pairing, "GT");
 
@@ -110,9 +111,12 @@ int main(void) {
 
     calculate_signatures(h, secret_key, sig);
 
+    // printf("Calculated Signatures\n");
+
     // Aggregate signatures
     aggregate_signatures(agg_sig, sig);
 
+    // printf("Aggregated Signatures\n");
 
     // Pairings
 
@@ -120,6 +124,8 @@ int main(void) {
     pairing_apply(lhs, agg_sig, g, pairing);
 
     compute_rhs(rhs, temp1, h, public_key, pairing);    
+
+    // printf("Computed rhs\n");
 
     // pairing_apply(temp2, h, public_key, pairing);
 
