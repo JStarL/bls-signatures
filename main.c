@@ -131,6 +131,21 @@ int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
 
     printf("Elapsed Time: Calculate ECDSA Signatures: %.0f microseconds\n", ecdsa_sig);
 
+    /*
+    // Serialize and display the signatures
+    unsigned char signature_serialized[64];
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        secp256k1_ecdsa_signature_serialize_compact(ctx, signature_serialized, &signatures[i]);
+        printf("Signature %d (serialized): ", i + 1);
+        for (int j = 0; j < 64; j++) {
+            printf("%02x", signature_serialized[j]);
+        }
+        printf("\n");
+    }
+    */
+
+    
+
 
     return 0;
 }
