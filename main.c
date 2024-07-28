@@ -1,7 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <pbc/pbc.h>
 #include <string.h>
 #include <openssl/sha.h>
+
+#define BATCH_SIZE 4000
+#define TX_SIZE 12
+#define TX_DEFAULT "AAAAAAAAAAAA"
 
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 
@@ -46,9 +51,20 @@ int main(void) {
 
     const char *message = "Hello World";
 
+    char *msg = (char *)malloc((TX_SIZE+1) * sizeof(char));
+
+    if (msg == NULL) {
+        fprintf(stderr, "Memory Allocation Fail");
+        return 1;
+    }
+
+    snprintf(msg, TX_SIZE+1, TX_DEFAULT);
+
+    printf("Msg: %s\n", msg);
+
     unsigned char hash[SHA256_DIGEST_LENGTH];
 
-    SHA256((unsigned char *)message, strlen(message), hash);
+    SHA256((unsigned char *)msg, TX_SIZE, hash);
 
     printf("SHA-256 hash: ");
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
@@ -74,8 +90,17 @@ int main(void) {
         printf("Signature does not verify\n");
     }
 
+    element_clear(g);
+    element_clear(h);
+    element_clear(public_key);
+    element_clear(secret_key);
+    element_clear(sig);
+    element_clear(temp1);
+    element_clear(temp2);
 
+    free(msg);
 
+    pairing_clear(pairing);
 
 }
 
