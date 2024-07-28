@@ -9,6 +9,7 @@
 #define TX_DEFAULT "AAAAAAAAAAAA"
 
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
+void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key);
 
 int main(void) {
     pairing_t pairing;
@@ -24,26 +25,37 @@ int main(void) {
 
     // holding system parameters
     element_t g, h;
-    element_t public_key, secret_key;
-    element_t sig;
+    element_t *secret_key;
+    element_t *public_key;
+    element_t *sig;
     element_t temp1, temp2;
 
     
 
     initialize_data_structure(g, pairing, "G2");
-    initialize_data_structure(public_key, pairing, "G2");
+    
+    // Only a single message being signed multiple times by different parties
     initialize_data_structure(h, pairing, "G1");
-    initialize_data_structure(sig, pairing, "G1");
+    
     initialize_data_structure(temp1, pairing, "GT");
     initialize_data_structure(temp2, pairing, "GT");
-    initialize_data_structure(secret_key, pairing, "Zr");
+    
+    // Allocate memory for secret_key, public_key and signature arrays
+    secret_key = (element_t *)malloc(BATCH_SIZE * sizeof(element_t));
+    public_key = (element_t *)malloc(BATCH_SIZE * sizeof(element_t));
+    sig = (element_t *)malloc(BATCH_SIZE * sizeof(element_t));
+
+    for (int i = 0; i < BATCH_SIZE; i++)
+    {
+        initialize_data_structure(public_key[i], pairing, "G2");
+        initialize_data_structure(sig[i], pairing, "G1");
+        initialize_data_structure(secret_key[i], pairing, "Zr");
+    }
     
 
     element_random(g);
 
-    element_random(secret_key);
-
-    element_pow_zn(public_key, g, secret_key);
+    generate_private_public_keys(g, secret_key, public_key);
 
     /*
     To implement, BLS Signature hashing
@@ -92,9 +104,16 @@ int main(void) {
 
     element_clear(g);
     element_clear(h);
-    element_clear(public_key);
-    element_clear(secret_key);
-    element_clear(sig);
+
+    for (size_t i = 0; i < BATCH_SIZE; ++i) {
+        element_clear(secret_key[i]);
+        element_clear(public_key[i]);
+        element_clear(sig[i]);
+    }
+    free(secret_key);
+    free(public_key);
+    free(sig);
+
     element_clear(temp1);
     element_clear(temp2);
 
@@ -116,4 +135,12 @@ void initialize_data_structure(element_t x, pairing_t pairing, char *type) {
     }
 }
 
+void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key) {
+    for (int i = 0; i < BATCH_SIZE; i++)
+    {
+        element_random(secret_key[i]);
 
+        element_pow_zn(public_key[i], g, secret_key[i]);
+    }
+    
+}
