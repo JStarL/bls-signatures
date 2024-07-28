@@ -12,6 +12,8 @@ void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key);
 void calculate_signatures(element_t h, element_t *secret_key, element_t *sig);
 void aggregate_signatures(element_t agg_sig, element_t *sig);
+void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_key, pairing_t pairing);
+
 
 /**
  * n = 4000
@@ -40,8 +42,9 @@ int main(void) {
     element_t *sig;
     element_t temp1, temp2;
     element_t agg_sig;
-
+    element_t lhs, rhs;
     
+    // Initialization
 
     initialize_data_structure(g, pairing, "G2");
     
@@ -63,6 +66,9 @@ int main(void) {
         initialize_data_structure(secret_key[i], pairing, "Zr");
     }
     
+    initialize_data_structure(lhs, pairing, "GT");
+    initialize_data_structure(rhs, pairing, "GT");
+
     element_random(g);
 
     generate_private_public_keys(g, secret_key, public_key);
@@ -108,18 +114,24 @@ int main(void) {
     aggregate_signatures(agg_sig, sig);
 
 
-    // Do pairings
+    // Pairings
 
-    pairing_apply(temp1, sig, g, pairing);
-    pairing_apply(temp2, h, public_key, pairing);
+    // lhs
+    pairing_apply(lhs, agg_sig, g, pairing);
 
-    // compare pairings
+    compute_rhs(rhs, temp1, h, public_key, pairing);    
 
-    if (!element_cmp(temp1, temp2)) {
-        printf("Signature Verifies\n");
+    // pairing_apply(temp2, h, public_key, pairing);
+
+    // compare lhs and rhs
+
+    if (!element_cmp(lhs, rhs)) {
+        printf("Aggregate Signature Verifies\n");
     } else {
-        printf("Signature does not verify\n");
+        printf("Aggregate Signature does not verify\n");
     }
+
+    // Cleanup
 
     element_clear(g);
     element_clear(h);
@@ -177,4 +189,12 @@ void aggregate_signatures(element_t agg_sig, element_t *sig) {
     for (int i = 0; i < BATCH_SIZE; i++) {
         element_mul(agg_sig, agg_sig, sig[i]);
     }
+}
+
+void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_key, pairing_t pairing) {
+    for (int i = 0; i < BATCH_SIZE; i++)
+    {
+        pairing_apply(temp1, h, public_key[i], pairing);
+        element_mul(rhs, rhs, temp1);
+    }   
 }
