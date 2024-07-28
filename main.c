@@ -146,14 +146,17 @@ int main(void) {
 
     printf("Elapsed Time: Aggregated Signatures: %.0f microseconds\n", elapsed);
 
-    // Pairings
+    /**
+     * 3) Time the verification of BLS signatures
+     */
+
+    gettimeofday(&start, NULL);
 
     // lhs
     pairing_apply(lhs, agg_sig, g, pairing);
 
+    // rhs
     compute_rhs(rhs, temp1, h, public_key, pairing);    
-
-    // printf("Computed rhs\n");
 
     // pairing_apply(temp2, h, public_key, pairing);
 
@@ -164,6 +167,14 @@ int main(void) {
     } else {
         printf("Aggregate Signature does not verify\n");
     }
+
+    gettimeofday(&end, NULL);
+
+    seconds  = end.tv_sec  - start.tv_sec;
+    useconds = end.tv_usec - start.tv_usec;
+    elapsed = seconds * 1e6 + useconds;
+
+    printf("Elapsed Time: Verification of Signatures: %.0f microseconds\n", elapsed);
 
     // Cleanup
 
