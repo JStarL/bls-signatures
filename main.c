@@ -57,7 +57,7 @@ int main(void) {
     printf("\n");
 
 
-    element_from_hash(h, hash, 6);
+    element_from_hash(h, hash, SHA256_DIGEST_LENGTH);
 
     element_pow_zn(sig, h, secret_key);
 
