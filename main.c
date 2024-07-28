@@ -130,10 +130,21 @@ int main(void) {
 
     printf("Elapsed Time: Calculated Signatures: %.0f microseconds\n", elapsed);
 
-    // Aggregate signatures
+    /**
+     * 2) Time the aggregation of BLS signatures
+     */
+
+    gettimeofday(&start, NULL);
+
     aggregate_signatures(agg_sig, sig);
 
-    // printf("Aggregated Signatures\n");
+    gettimeofday(&end, NULL);
+
+    seconds  = end.tv_sec  - start.tv_sec;
+    useconds = end.tv_usec - start.tv_usec;
+    elapsed = seconds * 1e6 + useconds;
+
+    printf("Elapsed Time: Aggregated Signatures: %.0f microseconds\n", elapsed);
 
     // Pairings
 
