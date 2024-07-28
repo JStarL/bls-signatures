@@ -11,6 +11,7 @@
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key);
 void calculate_signatures(element_t h, element_t *secret_key, element_t *sig);
+void aggregate_signatures(element_t agg_sig, element_t *sig);
 
 /**
  * n = 4000
@@ -38,6 +39,7 @@ int main(void) {
     element_t *public_key;
     element_t *sig;
     element_t temp1, temp2;
+    element_t agg_sig;
 
     
 
@@ -71,6 +73,8 @@ int main(void) {
 
     // const char *message = "Hello World";
 
+    // Message Operations
+
     char *msg = (char *)malloc((TX_SIZE+1) * sizeof(char));
 
     if (msg == NULL) {
@@ -81,6 +85,8 @@ int main(void) {
     snprintf(msg, TX_SIZE+1, TX_DEFAULT);
 
     printf("Msg: %s\n", msg);
+
+    // SHA256 Hash the message
 
     unsigned char hash[SHA256_DIGEST_LENGTH];
 
@@ -97,6 +103,9 @@ int main(void) {
     element_from_hash(h, hash, SHA256_DIGEST_LENGTH);
 
     calculate_signatures(h, secret_key, sig);
+
+    // Aggregate signatures
+    aggregate_signatures(agg_sig, sig);
 
 
     // Do pairings
@@ -161,4 +170,11 @@ void calculate_signatures(element_t h, element_t *secret_key, element_t *sig) {
         element_pow_zn(sig[i], h, secret_key[i]);
     }
     
+}
+
+void aggregate_signatures(element_t agg_sig, element_t *sig) {
+    element_set1(agg_sig);
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        element_mul(agg_sig, agg_sig, sig[i]);
+    }
 }
