@@ -11,14 +11,14 @@
 #define TX_SIZE 12
 #define TX_DEFAULT "AAAAAAAAAAAA"
 
-int bls_ops(void);
+int bls_ops(char *hash, struct timeval *start, struct timeval *end);
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key);
 void calculate_signatures(element_t h, element_t *secret_key, element_t *sig);
 void aggregate_signatures(element_t agg_sig, element_t *sig);
 void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_key, pairing_t pairing);
 
-int ecdsa_ops(void);
+int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end);
 int generate_random_seckey(unsigned char *seckey);
 
 /**
@@ -29,14 +29,56 @@ int generate_random_seckey(unsigned char *seckey);
  */
 
 int main(void) {
-    int bls_return = bls_ops();
+    
+    // Message Operations
+
+    char *msg = (char *)malloc((TX_SIZE+1) * sizeof(char));
+
+    if (msg == NULL) {
+        fprintf(stderr, "Memory Allocation Fail");
+        return 1;
+    }
+
+    snprintf(msg, TX_SIZE+1, TX_DEFAULT);
+
+    printf("Msg: %s\n", msg);
+
+    // SHA256 Hash the message
+
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    SHA256((unsigned char *)msg, TX_SIZE, hash);
+
+    // Debug
+    printf("SHA-256 hash: ");
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        printf("%02x", hash[i]);
+    }
+    printf("\n");
+    
+    // To time functions
+    struct timeval start, end;
+
+    // BLS ops
+
+    int bls_return = bls_ops(hash, &start, &end);
 
     if (bls_return) return bls_return;
     
-    return ecdsa_ops();
+    // ECDSA ops
+
+    int ecdsa_return = ecdsa_ops(hash, &start, &end);
+    
+    if (ecdsa_return) return ecdsa_return;
+
+    // Cleanup
+
+    free(msg);
+
+    return 0;
 }
 
-int ecdsa_ops(void) {
+int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
 
     // Initialize the secp256k1 context for signing and verification
     secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
@@ -58,15 +100,30 @@ int ecdsa_ops(void) {
         }
     }
 
-    
+    /**
+     * 1) Calculation of ECDSA Signatures
+     */
+
+
+
+    secp256k1_ecdsa_signature signatures[BATCH_SIZE];
+
+    // Create the signatures
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        if (!secp256k1_ecdsa_sign(ctx, &signatures[i], hash, seckeys[i], NULL, NULL)) {
+            printf("Failed to sign message with key %d\n", i + 1);
+            secp256k1_context_destroy(ctx);
+            return 1;
+        }
+    }
+
+
 
     return 0;
 }
 
-int bls_ops(void) {
+int bls_ops(char *hash, struct timeval *start, struct timeval *end) {
     
-    // To time functions
-    struct timeval start, end;
     long seconds, useconds;
     double elapsed;
     
@@ -126,33 +183,6 @@ int bls_ops(void) {
 
     generate_private_public_keys(g, secret_key, public_key);
 
-    // Message Operations
-
-    char *msg = (char *)malloc((TX_SIZE+1) * sizeof(char));
-
-    if (msg == NULL) {
-        fprintf(stderr, "Memory Allocation Fail");
-        return 1;
-    }
-
-    snprintf(msg, TX_SIZE+1, TX_DEFAULT);
-
-    printf("Msg: %s\n", msg);
-
-    // SHA256 Hash the message
-
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-
-    SHA256((unsigned char *)msg, TX_SIZE, hash);
-
-    // Debug
-    printf("SHA-256 hash: ");
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        printf("%02x", hash[i]);
-    }
-    printf("\n");
-
-
     element_from_hash(h, hash, SHA256_DIGEST_LENGTH);
 
     /**
@@ -160,14 +190,14 @@ int bls_ops(void) {
      * NOTE: This happens on the user end, not as a part of the rollup
      */
 
-    gettimeofday(&start, NULL);
+    gettimeofday(start, NULL);
 
     calculate_signatures(h, secret_key, sig);
 
-    gettimeofday(&end, NULL);
+    gettimeofday(end, NULL);
 
-    seconds  = end.tv_sec  - start.tv_sec;
-    useconds = end.tv_usec - start.tv_usec;
+    seconds  = end->tv_sec  - start->tv_sec;
+    useconds = end->tv_usec - start->tv_usec;
     elapsed = seconds * 1e6 + useconds;
 
     printf("Elapsed Time: Calculated BLS Signatures: %.0f microseconds\n", elapsed);
@@ -176,14 +206,14 @@ int bls_ops(void) {
      * 2) Time the aggregation of BLS signatures
      */
 
-    gettimeofday(&start, NULL);
+    gettimeofday(start, NULL);
 
     aggregate_signatures(agg_sig, sig);
 
-    gettimeofday(&end, NULL);
+    gettimeofday(end, NULL);
 
-    seconds  = end.tv_sec  - start.tv_sec;
-    useconds = end.tv_usec - start.tv_usec;
+    seconds  = end->tv_sec  - start->tv_sec;
+    useconds = end->tv_usec - start->tv_usec;
     bls_aggregation = seconds * 1e6 + useconds;
 
     printf("Elapsed Time: Aggregated BLS Signatures: %.0f microseconds\n", bls_aggregation);
@@ -192,7 +222,7 @@ int bls_ops(void) {
      * 3) Time the verification of BLS signatures
      */
 
-    gettimeofday(&start, NULL);
+    gettimeofday(start, NULL);
 
     // lhs
     pairing_apply(lhs, agg_sig, g, pairing);
@@ -210,10 +240,10 @@ int bls_ops(void) {
         printf("Aggregate Signature does not verify\n");
     }
 
-    gettimeofday(&end, NULL);
+    gettimeofday(end, NULL);
 
-    seconds  = end.tv_sec  - start.tv_sec;
-    useconds = end.tv_usec - start.tv_usec;
+    seconds  = end->tv_sec  - start->tv_sec;
+    useconds = end->tv_usec - start->tv_usec;
     bls_verification = seconds * 1e6 + useconds;
 
     printf("Elapsed Time: Verification of Signatures: %.0f microseconds\n", bls_verification);
@@ -238,8 +268,6 @@ int bls_ops(void) {
 
     element_clear(temp1);
     element_clear(temp2);
-
-    free(msg);
 
     pairing_clear(pairing);
 
