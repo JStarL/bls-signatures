@@ -10,6 +10,15 @@
 
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key);
+void calculate_signatures(element_t h, element_t *secret_key, element_t *sig);
+
+/**
+ * n = 4000
+ * n secret key / public key pairs
+ * a single transaction
+ * this single transaction is signed by n signers, producing n unique signatures
+ */
+
 
 int main(void) {
     pairing_t pairing;
@@ -52,7 +61,6 @@ int main(void) {
         initialize_data_structure(secret_key[i], pairing, "Zr");
     }
     
-
     element_random(g);
 
     generate_private_public_keys(g, secret_key, public_key);
@@ -61,7 +69,7 @@ int main(void) {
     To implement, BLS Signature hashing
     */
 
-    const char *message = "Hello World";
+    // const char *message = "Hello World";
 
     char *msg = (char *)malloc((TX_SIZE+1) * sizeof(char));
 
@@ -78,6 +86,7 @@ int main(void) {
 
     SHA256((unsigned char *)msg, TX_SIZE, hash);
 
+    // Debug
     printf("SHA-256 hash: ");
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
         printf("%02x", hash[i]);
@@ -87,7 +96,8 @@ int main(void) {
 
     element_from_hash(h, hash, SHA256_DIGEST_LENGTH);
 
-    element_pow_zn(sig, h, secret_key);
+    calculate_signatures(h, secret_key, sig);
+
 
     // Do pairings
 
@@ -141,6 +151,14 @@ void generate_private_public_keys(element_t g, element_t *secret_key, element_t 
         element_random(secret_key[i]);
 
         element_pow_zn(public_key[i], g, secret_key[i]);
+    }
+    
+}
+
+void calculate_signatures(element_t h, element_t *secret_key, element_t *sig) {
+    for (int i = 0; i < BATCH_SIZE; i++)
+    {
+        element_pow_zn(sig[i], h, secret_key[i]);
     }
     
 }
