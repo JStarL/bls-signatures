@@ -185,8 +185,7 @@ int bls_ops(char *hash, struct timeval *start, struct timeval *end) {
     pairing_init_set_buf(pairing, param, count);
 
     // debug
-    printf("%s\n", param);
-    printf("Here\n");
+    // printf("%s\n", param);
 
     // holding system parameters
     element_t g, h;
