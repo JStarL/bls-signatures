@@ -81,7 +81,7 @@ int main(void) {
 int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
 
     long seconds, useconds;
-    double ecdsa_sig;
+    double ecdsa_sig, ecdsa_total;
 
     printf("\n||============ ECDSA Signature Tests ============||");
 
@@ -144,8 +144,26 @@ int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
     }
     */
 
-    
+    /**
+     * 2) Verification of ECDSA Signatures
+     */
 
+    gettimeofday(start, NULL);
+
+    // Verify the signatures
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        if (!secp256k1_ecdsa_verify(ctx, &signatures[i], hash, &pubkeys[i])) {
+            printf("Signature %d verification failed\n", i + 1);
+        }
+    }
+
+    gettimeofday(end, NULL);
+
+    seconds  = end->tv_sec  - start->tv_sec;
+    useconds = end->tv_usec - start->tv_usec;
+    ecdsa_total = seconds * 1e6 + useconds;
+
+    printf("Elapsed Time: Verify ECDSA Signatures: %.0f microseconds\n", ecdsa_total);    
 
     return 0;
 }
