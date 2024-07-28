@@ -3,6 +3,8 @@
 #include <pbc/pbc.h>
 #include <string.h>
 #include <openssl/sha.h>
+#include <openssl/rand.h>
+#include <secp256k1.h>
 #include <sys/time.h>
 
 #define BATCH_SIZE 4000
@@ -16,6 +18,8 @@ void calculate_signatures(element_t h, element_t *secret_key, element_t *sig);
 void aggregate_signatures(element_t agg_sig, element_t *sig);
 void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_key, pairing_t pairing);
 
+int ecdsa_ops(void);
+int generate_random_seckey(unsigned char *seckey);
 
 /**
  * n = 4000
@@ -28,9 +32,36 @@ int main(void) {
     int bls_return = bls_ops();
 
     if (bls_return) return bls_return;
-    return 0;
+    
+    return ecdsa_ops();
 }
 
+int ecdsa_ops(void) {
+
+    // Initialize the secp256k1 context for signing and verification
+    secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+
+    // Generate three random private keys
+    unsigned char seckeys[BATCH_SIZE][32];
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        int ecdsa_gen_key_return = generate_random_seckey(seckeys[i]);
+        if (ecdsa_gen_key_return) return ecdsa_gen_key_return;
+    }
+
+    // Generate the public keys from the private keys
+    secp256k1_pubkey pubkeys[BATCH_SIZE];
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        if (!secp256k1_ec_pubkey_create(ctx, &pubkeys[i], seckeys[i])) {
+            printf("Failed to create public key for key %d\n", i + 1);
+            secp256k1_context_destroy(ctx);
+            return 1;
+        }
+    }
+
+    
+
+    return 0;
+}
 
 int bls_ops(void) {
     
@@ -258,4 +289,12 @@ void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_
         pairing_apply(temp1, h, public_key[i], pairing);
         element_mul(rhs, rhs, temp1);
     }   
+}
+
+int generate_random_seckey(unsigned char *seckey) {
+    // Generate random bytes for the secret key
+    if (!RAND_bytes(seckey, 32)) {
+        fprintf(stderr, "Failed to generate random secret key\n");
+        return 1;
+    }
 }
