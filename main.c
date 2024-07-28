@@ -3,6 +3,7 @@
 #include <pbc/pbc.h>
 #include <string.h>
 #include <openssl/sha.h>
+#include <sys/time.h>
 
 #define BATCH_SIZE 4000
 #define TX_SIZE 12
@@ -24,6 +25,12 @@ void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_
 
 
 int main(void) {
+    
+    // To time functions
+    struct timeval start, end;
+    long seconds, useconds;
+    double elapsed;
+    
     pairing_t pairing;
     char param[1024];
     size_t count = fread(param, 1, 1024, stdin);
@@ -70,15 +77,13 @@ int main(void) {
     initialize_data_structure(lhs, pairing, "GT");
     initialize_data_structure(rhs, pairing, "GT");
 
+    // System Parameters and Key Generation
+    // NOT to be timed, this happens on an individual's computer,
+    // not as a part of the rollup
+
     element_random(g);
 
     generate_private_public_keys(g, secret_key, public_key);
-
-    /*
-    To implement, BLS Signature hashing
-    */
-
-    // const char *message = "Hello World";
 
     // Message Operations
 
@@ -109,9 +114,21 @@ int main(void) {
 
     element_from_hash(h, hash, SHA256_DIGEST_LENGTH);
 
+    /**
+     * 1) Time the calculation of BLS signatures
+     */
+
+    gettimeofday(&start, NULL);
+
     calculate_signatures(h, secret_key, sig);
 
-    // printf("Calculated Signatures\n");
+    gettimeofday(&end, NULL);
+
+    seconds  = end.tv_sec  - start.tv_sec;
+    useconds = end.tv_usec - start.tv_usec;
+    elapsed = seconds * 1e6 + useconds;
+
+    printf("Elapsed Time: Calculated Signatures: %.0f microseconds\n", elapsed);
 
     // Aggregate signatures
     aggregate_signatures(agg_sig, sig);
