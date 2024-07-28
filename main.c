@@ -59,18 +59,18 @@ int main(void) {
     // To time functions
     struct timeval start, end;
 
-    // BLS ops
-
-    int bls_return = bls_ops(hash, &start, &end);
-
-    if (bls_return) return bls_return;
-    
     // ECDSA ops
 
     int ecdsa_return = ecdsa_ops(hash, &start, &end);
     
     if (ecdsa_return) return ecdsa_return;
 
+    // BLS ops
+
+    int bls_return = bls_ops(hash, &start, &end);
+
+    if (bls_return) return bls_return;
+    
     // Cleanup
 
     free(msg);
@@ -83,8 +83,7 @@ int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
     long seconds, useconds;
     double ecdsa_sig, ecdsa_total;
 
-    printf("\n||============ ECDSA Signature Tests ============||");
-
+    printf("\n||============ ECDSA Signature Tests ============||\n");
 
     // Initialize the secp256k1 context for signing and verification
     secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
@@ -170,7 +169,7 @@ int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
 
 int bls_ops(char *hash, struct timeval *start, struct timeval *end) {
 
-    printf("\n||============= BLS Signature Tests =============||");
+    printf("\n||============= BLS Signature Tests =============||\n");
 
     long seconds, useconds;
     double elapsed;
@@ -178,7 +177,7 @@ int bls_ops(char *hash, struct timeval *start, struct timeval *end) {
     double bls_aggregation, bls_verification, bls_total;
     
     pairing_t pairing;
-    char param[1024];
+    char param[1024] = {0};
     size_t count = fread(param, 1, 1024, stdin);
     if (!count) {
         pbc_die("input error");
@@ -187,6 +186,7 @@ int bls_ops(char *hash, struct timeval *start, struct timeval *end) {
 
     // debug
     printf("%s\n", param);
+    printf("Here\n");
 
     // holding system parameters
     element_t g, h;
@@ -370,7 +370,8 @@ void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_
 int generate_random_seckey(unsigned char *seckey) {
     // Generate random bytes for the secret key
     if (!RAND_bytes(seckey, 32)) {
-        fprintf(stderr, "Failed to generate random secret key\n");
+        fprintf(stdout, "Failed to generate random secret key\n");
         return 1;
     }
+    return 0;
 }
