@@ -80,6 +80,12 @@ int main(void) {
 
 int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
 
+    long seconds, useconds;
+    double ecdsa_sig;
+
+    printf("\n||============ ECDSA Signature Tests ============||");
+
+
     // Initialize the secp256k1 context for signing and verification
     secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
 
@@ -104,7 +110,7 @@ int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
      * 1) Calculation of ECDSA Signatures
      */
 
-
+    gettimeofday(start, NULL);
 
     secp256k1_ecdsa_signature signatures[BATCH_SIZE];
 
@@ -117,13 +123,22 @@ int ecdsa_ops(unsigned char *hash, struct timeval *start, struct timeval *end) {
         }
     }
 
+    gettimeofday(end, NULL);
+
+    seconds  = end->tv_sec  - start->tv_sec;
+    useconds = end->tv_usec - start->tv_usec;
+    ecdsa_sig = seconds * 1e6 + useconds;
+
+    printf("Elapsed Time: Calculate ECDSA Signatures: %.0f microseconds\n", ecdsa_sig);
 
 
     return 0;
 }
 
 int bls_ops(char *hash, struct timeval *start, struct timeval *end) {
-    
+
+    printf("\n||============= BLS Signature Tests =============||");
+
     long seconds, useconds;
     double elapsed;
     
