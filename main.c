@@ -9,6 +9,7 @@
 #define TX_SIZE 12
 #define TX_DEFAULT "AAAAAAAAAAAA"
 
+int bls_ops(void);
 void initialize_data_structure(element_t x, pairing_t pairing, char *type);
 void generate_private_public_keys(element_t g, element_t *secret_key, element_t *public_key);
 void calculate_signatures(element_t h, element_t *secret_key, element_t *sig);
@@ -23,8 +24,15 @@ void compute_rhs(element_t rhs, element_t temp1, element_t h, element_t *public_
  * this single transaction is signed by n signers, producing n unique signatures
  */
 
-
 int main(void) {
+    int bls_return = bls_ops();
+
+    if (bls_return) return bls_return;
+    return 0;
+}
+
+
+int bls_ops(void) {
     
     // To time functions
     struct timeval start, end;
@@ -204,6 +212,7 @@ int main(void) {
 
     pairing_clear(pairing);
 
+    return 0;
 }
 
 void initialize_data_structure(element_t x, pairing_t pairing, char *type) {
