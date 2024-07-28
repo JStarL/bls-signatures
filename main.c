@@ -31,6 +31,8 @@ int main(void) {
     long seconds, useconds;
     double elapsed;
     
+    double bls_aggregation, bls_verification, bls_total;
+    
     pairing_t pairing;
     char param[1024];
     size_t count = fread(param, 1, 1024, stdin);
@@ -116,6 +118,7 @@ int main(void) {
 
     /**
      * 1) Time the calculation of BLS signatures
+     * NOTE: This happens on the user end, not as a part of the rollup
      */
 
     gettimeofday(&start, NULL);
@@ -128,7 +131,7 @@ int main(void) {
     useconds = end.tv_usec - start.tv_usec;
     elapsed = seconds * 1e6 + useconds;
 
-    printf("Elapsed Time: Calculated Signatures: %.0f microseconds\n", elapsed);
+    printf("Elapsed Time: Calculated BLS Signatures: %.0f microseconds\n", elapsed);
 
     /**
      * 2) Time the aggregation of BLS signatures
@@ -142,9 +145,9 @@ int main(void) {
 
     seconds  = end.tv_sec  - start.tv_sec;
     useconds = end.tv_usec - start.tv_usec;
-    elapsed = seconds * 1e6 + useconds;
+    bls_aggregation = seconds * 1e6 + useconds;
 
-    printf("Elapsed Time: Aggregated Signatures: %.0f microseconds\n", elapsed);
+    printf("Elapsed Time: Aggregated BLS Signatures: %.0f microseconds\n", bls_aggregation);
 
     /**
      * 3) Time the verification of BLS signatures
@@ -172,10 +175,14 @@ int main(void) {
 
     seconds  = end.tv_sec  - start.tv_sec;
     useconds = end.tv_usec - start.tv_usec;
-    elapsed = seconds * 1e6 + useconds;
+    bls_verification = seconds * 1e6 + useconds;
 
-    printf("Elapsed Time: Verification of Signatures: %.0f microseconds\n", elapsed);
+    printf("Elapsed Time: Verification of Signatures: %.0f microseconds\n", bls_verification);
 
+    bls_total = bls_aggregation + bls_verification;
+
+    printf("Elapsed Time: BLS Total: %.0f microseconds\n", bls_total);
+    
     // Cleanup
 
     element_clear(g);
